@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 import random as rd
 from multiprocessing import Pool
+import json
 
 # Third-party libraries
 import matplotlib.pyplot as plt
@@ -30,6 +31,8 @@ from ariel.utils.tracker import Tracker
 from ariel.utils.video_recorder import VideoRecorder
 
 from Neural_Net import Brain, Layer
+
+from networkx.readwrite import json_graph
 
 # Type Checking
 if TYPE_CHECKING:
@@ -220,7 +223,10 @@ def learn_brain(genotypes):
 
     num_modules = 20
     robot_graph = genotypes_to_phenotypes(genotypes, num_modules)
-    
+
+    data = json_graph.node_link_data(robot_graph, edges="edges")
+    json_string = json.dumps(data, indent=4)
+
     input_size, output_size = get_input_output_sizes(robot_graph)
 
     population_size = 64
@@ -281,7 +287,7 @@ def learn_brain(genotypes):
 
         next_gen.extend([c.reset() for c in population[: len(population) // 2]])
         population = next_gen
-    return fitness, best_brain, genotypes
+    return fitness, best_brain, json_string
 
 def genotypes_to_phenotypes(genotypes: list[list[float]], num_modules: int):
     nde = NeuralDevelopmentalEncoding(number_of_modules=num_modules)
@@ -322,7 +328,7 @@ def main2() -> None:
     rot_p_genes = RNG.random((population_size, genotype_size)).astype(np.float32)
 
     best_brain = []
-    best_robot = []
+    best_robot = ""
     fitness = []
     for _ in range(generations):
         with Pool(processes=8) as pool:
